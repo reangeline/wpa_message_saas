@@ -1,0 +1,96 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: >
+  go-serverless - AWS SAM Template using chi
+
+Globals:
+  Function:
+    Timeout: 30
+
+Resources:
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: ${opt:stage, 'dev'}
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: bin/main
+      Runtime: go1.x
+      CodeUri: .
+      Environment:
+        Variables:
+          DYNAMODB_TABLE: !Sub ${self:service}-${opt:stage, self:provider.stage}
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:Query
+                - dynamodb:Scan
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+              Resource: "arn:aws:dynamodb:us-east-1:237071355172:table/usersTable"
+      Events:
+        UsersGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /users
+            Method: get
+        HealthGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /health
+            Method: get
+        UsersPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /users
+            Method: post
+        UserGetByEmail:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /users/{email}
+            Method: get
+        UsersPut:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /users
+            Method: put
+        WebhookGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /webhook
+            Method: get
+        WebhookPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /webhook
+            Method: post
+        SendPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /send
+            Method: post
+        OpenAIPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /openai
+            Method: post
+
+Outputs:
+  ApiUrl:
+    Description: "API Gateway endpoint URL for Prod stage"
+    Value: !Sub "https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/${opt:stage, 'dev'}"

@@ -1,0 +1,61 @@
+service: go-serverless
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: go1.x
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  environment:
+    DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:us-east-1:237071355172:table/usersTable"
+
+plugins:
+  - serverless-offline
+
+package:
+  patterns:
+    - '!./**'
+    - ./bin/**
+
+functions:
+  api:
+    handler: bin/main
+    events: 
+      - http:
+          path: /users
+          method: GET
+      - http:
+          path: /health
+          method: GET
+      - http:
+          path: /users
+          method: POST
+      - http:
+          path: /users/{email}
+          method: GET
+      - http:
+          path: /users
+          method: PUT
+      - http:
+          path: /webhook
+          method: GET
+      - http:
+          path: /webhook
+          method: POST
+      - http:
+          path: /send
+          method: POST
+      - http:
+          path: /openai
+          method: POST
